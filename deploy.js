@@ -1,13 +1,11 @@
 import 'dotenv/config';
 import { REST, Routes, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 
-// 環境変数のチェック
 if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID) {
   console.error('【エラー】DISCORD_TOKEN または CLIENT_ID が環境変数に設定されていません！RenderのEnvironmentを確認してください。');
   process.exit(1);
 }
 
-// 1〜99個のコマンド名リスト（Gemini特選セレクション）
 const commandNames = [
   // 1〜15: 基本挨拶・情報・管理
   'shun', 'ping', 'verify', 'userinfo', 'serverinfo', 'help', 'rules', 'membercount', 'botinfo', 'avatar',
@@ -35,19 +33,31 @@ const commandNames = [
   'verify-panel'
 ];
 
-// リストから自動でSlashCommandBuilderを生成
 const commands = commandNames.map((name, index) => {
   const builder = new SlashCommandBuilder()
     .setName(name)
     .setDescription(`しゅん＆ぺんぎんさば用コマンド #${index + 1} (${name})`);
 
-  // 管理系コマンドには必要な権限を自動付与
+  // 管理系コマンドの権限設定
   if (['kick', 'ban', 'clear', 'role-add', 'role-remove', 'mute', 'unmute', 'timeout', 'warn', 'lock', 'unlock', 'slowmode', 'announce'].includes(name)) {
     builder.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
   }
-  // パネル系や特殊コマンドは管理者のみ
-  if (['ticket-panel', 'verify-panel', 'say', 'embed'].includes(name)) {
+
+  // 98個目: チケットパネルの設定
+  if (name === 'ticket-panel') {
     builder.setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  }
+
+  // 99個目: 認証パネルの設定 (オプションで付与ロールを指定可能にする)
+  if (name === 'verify-panel') {
+    builder
+      .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+      .addRoleOption(option => 
+        option
+          .setName('role')
+          .setDescription('認証完了時に付与したいロールを選択してください')
+          .setRequired(true)
+      );
   }
 
   return builder.toJSON();
