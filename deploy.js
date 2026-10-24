@@ -1,4 +1,11 @@
+import 'dotenv/config';
 import { REST, Routes, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+
+// 環境変数が設定されているかチェックする安全装置
+if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID) {
+  console.error('【エラー】DISCORD_TOKEN または CLIENT_ID が環境変数に設定されていません！RenderのEnvironmentを確認してください。');
+  process.exit(1);
+}
 
 const commands = [
   // 1〜10番目の基本・管理コマンド
@@ -53,6 +60,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     );
     console.log('スラッシュコマンドの登録が正常に完了しました！');
   } catch (error) {
-    console.error(error);
+    console.error('コマンド登録時にエラーが発生しました:', error);
   }
 })();
