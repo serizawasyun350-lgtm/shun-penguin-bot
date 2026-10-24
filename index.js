@@ -23,11 +23,11 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async interaction => {
-  // 1. スラッシュコマンド受信処理
+  // 1. スラッシュコマンドが実行されたときの処理
   if (interaction.isChatInputCommand()) {
     const { commandName } = interaction;
 
-    // 98個目: チケットパネル
+    // 98番目: チケットパネル設置コマンド
     if (commandName === 'ticket-panel') {
       const embed = new EmbedBuilder()
         .setTitle('🎫 お問い合わせ・サポート')
@@ -46,7 +46,7 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // 99個目: 認証パネル
+    // 99番目: 認証パネル設置コマンド
     if (commandName === 'verify-panel') {
       const embed = new EmbedBuilder()
         .setTitle('✅ 認証パネル')
@@ -65,7 +65,7 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // 各種コマンド応答分岐
+    // 各種コマンドごとの返答分岐
     switch (commandName) {
       case 'shun':
         await interaction.reply('しゅん＆ぺんぎんさばへようこそ！🐧✨');
@@ -74,20 +74,32 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply(`Pong! 🏓 応答速度: ${client.ws.ping}ms`);
         break;
       case 'verify':
-        await interaction.reply({ content: '手動認証コマンドが実行されました。', ephemeral: true });
+        await interaction.reply({ content: '手動認証が実行されました。', ephemeral: true });
+        break;
+      case 'omikuji':
+        const results = ['大吉 🎉', '中吉 ✨', '小吉 🌱', '吉 🍀', '凶 💧'];
+        const randomResult = results[Math.floor(Math.random() * results.length)];
+        await interaction.reply(`今日の運勢は... **${randomResult}** です！`);
+        break;
+      case 'coinflip':
+        const coin = Math.random() < 0.5 ? '表 (Heads)' : '裏 (Tails)';
+        await interaction.reply(`コインの結果は... **${coin}** です！🪙`);
         break;
       default:
-        await interaction.reply({ content: `コマンド「/${commandName}」を実行しました。`, ephemeral: true });
+        // 99個のコマンドのうち、個別設定していないその他のコマンドが実行されたときの共通応答
+        await interaction.reply({ content: `コマンド「/${commandName}」が実行されました！しゅん＆ぺんぎんさばBotは正常に稼働中です🐧`, ephemeral: true });
         break;
     }
   }
 
-  // 2. ボタン操作処理 (認証・チケット作成)
+  // 2. ボタンが押されたときの処理 (認証・チケット作成)
   if (interaction.isButton()) {
+    // 認証ボタン
     if (interaction.customId === 'btn_verify') {
-      await interaction.reply({ content: '✅ 認証が完了しました！サーバーをお楽しみください。', ephemeral: true });
+      await interaction.reply({ content: '✅ 認証が完了しました！しゅん＆ぺんぎんさばをお楽しみください！', ephemeral: true });
     }
 
+    // チケット発行ボタン
     if (interaction.customId === 'create_ticket') {
       const channelName = `ticket-${interaction.user.username}`;
       const guild = interaction.guild;
@@ -108,7 +120,7 @@ client.on('interactionCreate', async interaction => {
       });
 
       await interaction.reply({ content: `チケットチャンネルを作成しました: ${ticketChannel}`, ephemeral: true });
-      await ticketChannel.send(`@here ${interaction.user} 様お問い合わせありがとうございます。サポートの対応をお待ちください。`);
+      await ticketChannel.send(`@here ${interaction.user} 様、お問い合わせありがとうございます。運営の対応をお待ちください！`);
     }
   }
 });
