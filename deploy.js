@@ -7,63 +7,52 @@ if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID) {
   process.exit(1);
 }
 
-const commands = [];
+// 1〜99個のコマンド名リスト（Gemini特選セレクション）
+const commandNames = [
+  // 1〜15: 基本挨拶・情報・管理
+  'shun', 'ping', 'verify', 'userinfo', 'serverinfo', 'help', 'rules', 'membercount', 'botinfo', 'avatar',
+  'kick', 'ban', 'clear', 'role-add', 'role-remove',
+  
+  // 16〜30: モデレーション・サーバー管理
+  'mute', 'unmute', 'timeout', 'warn', 'warnings', 'lock', 'unlock', 'slowmode', 'announce', 'poll',
+  'say', 'embed', 'nick', 'report', 'suggest',
 
-// 1〜15番目：主要な管理・便利コマンド
-commands.push(
-  new SlashCommandBuilder().setName('shun').setDescription('しゅん＆ぺんぎんさばのあいさつ').toJSON(),
-  new SlashCommandBuilder().setName('ping').setDescription('Botの応答速度を確認').toJSON(),
-  new SlashCommandBuilder().setName('verify').setDescription('手動認証を実行').toJSON(),
-  new SlashCommandBuilder().setName('userinfo').setDescription('自分のユーザー情報を取得').toJSON(),
-  new SlashCommandBuilder().setName('serverinfo').setDescription('サーバー情報を取得').toJSON(),
-  new SlashCommandBuilder().setName('help').setDescription('Botのヘルプを表示').toJSON(),
-  new SlashCommandBuilder().setName('rules').setDescription('サーバーのルールを表示').toJSON(),
-  new SlashCommandBuilder().setName('membercount').setDescription('現在のメンバー数を表示').toJSON(),
-  new SlashCommandBuilder().setName('botinfo').setDescription('Botの情報を表示').toJSON(),
-  new SlashCommandBuilder().setName('avatar').setDescription('ユーザーのアバターを表示').toJSON(),
-  new SlashCommandBuilder().setName('kick').setDescription('メンバーをキック').setDefaultMemberPermissions(PermissionFlagsBits.KickMembers).toJSON(),
-  new SlashCommandBuilder().setName('ban').setDescription('メンバーをBAN').setDefaultMemberPermissions(PermissionFlagsBits.BanMembers).toJSON(),
-  new SlashCommandBuilder().setName('clear').setDescription('メッセージを一括削除').setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages).toJSON(),
-  new SlashCommandBuilder().setName('role-add').setDescription('ロールを付与').setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles).toJSON(),
-  new SlashCommandBuilder().setName('role-remove').setDescription('ロールを解除').setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles).toJSON()
-);
+  // 31〜60: お楽しみ・ミニゲーム・コミュニケーション
+  'omikuji', 'dice', 'coinflip', 'slots', 'rps', 'gacha', 'hug', 'pat', 'kiss', 'slap',
+  '8ball', 'rate', 'ascii', 'reverse', 'shufflemusic', 'wink', 'poke', 'tickle', 'cuddle', 'feed',
+  'drink', 'cookie', 'coffee', 'tea', 'cake', 'pizza', 'chocolate', 'ship', 'tarot', 'horoscope',
 
-// 16〜97番目：サーバーを盛り上げるお楽しみ・ユーティリティ系コマンドを自動生成で一括追加
-const funCommands = [
-  'omikuji', 'dice', 'coinflip', 'slots', 'rps', 'cat', 'dog', 'weather', 'news', 'poll',
-  'remind', 'translate', 'calc', 'memo', 'timer', 'quote', 'joke', 'fact', 'server-status', 'ping-all'
+  // 61〜97: 便利なユーティリティ機能
+  'weather', 'calc', 'timer', 'remind', 'translate', 'memo', 'note', 'qr', 'define', 'wiki',
+  'news', 'crypto', 'stock', 'color', 'password', 'uuid', 'math', 'ip', 'host', 'whois',
+  'channelinfo', 'roleinfo', 'emojiinfo', 'boosters', 'invites', 'banner', 'icon', 'uptime', 'speedtest',
+  'joke', 'fact', 'quote', 'lyrics', 'compatibility', 'zodiac', 'ping-web', 'ping-site',
+
+  // 98個目: チケットパネル
+  'ticket-panel',
+
+  // 99個目: 認証パネル
+  'verify-panel'
 ];
 
-for (let i = 16; i <= 97; i++) {
-  // リストの名前をループさせながら97個に達するまでコマンドを自動生成
-  const baseName = funCommands[(i - 16) % funCommands.length];
-  commands.push(
-    new SlashCommandBuilder()
-      .setName(`${baseName}-${i}`)
-      .setDescription(`しゅん＆ぺんぎんさば用機能コマンド #${i}`)
-      .toJSON()
-  );
-}
+// リストから自動でSlashCommandBuilderを生成
+const commands = commandNames.map((name, index) => {
+  const builder = new SlashCommandBuilder()
+    .setName(name)
+    .setDescription(`しゅん＆ぺんぎんさば用コマンド #${index + 1} (${name})`);
 
-// 98個目：チケットパネル設置コマンド
-commands.push(
-  new SlashCommandBuilder()
-    .setName('ticket-panel')
-    .setDescription('お問い合わせチケット発行パネルを設置します')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .toJSON()
-);
+  // 管理系コマンドには必要な権限を自動付与
+  if (['kick', 'ban', 'clear', 'role-add', 'role-remove', 'mute', 'unmute', 'timeout', 'warn', 'lock', 'unlock', 'slowmode', 'announce'].includes(name)) {
+    builder.setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
+  }
+  // パネル系や特殊コマンドは管理者のみ
+  if (['ticket-panel', 'verify-panel', 'say', 'embed'].includes(name)) {
+    builder.setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  }
 
-// 99個目：認証パネル設置コマンド
-commands.push(
-  new SlashCommandBuilder()
-    .setName('verify-panel')
-    .setDescription('サーバー参加者用の認証ボタンパネルを設置します')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .toJSON()
-);
+  return builder.toJSON();
+});
 
-// 登録処理
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
