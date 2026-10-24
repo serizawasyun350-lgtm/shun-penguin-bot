@@ -23,11 +23,11 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async interaction => {
-  // 1. スラッシュコマンドが実行されたときの処理
+  // 1. スラッシュコマンド処理
   if (interaction.isChatInputCommand()) {
     const { commandName } = interaction;
 
-    // 98番目: チケットパネル設置コマンド
+    // 98番目: チケットパネル
     if (commandName === 'ticket-panel') {
       const embed = new EmbedBuilder()
         .setTitle('🎫 お問い合わせ・サポート')
@@ -46,16 +46,18 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // 99番目: 認証パネル設置コマンド
+    // 99番目: 認証パネル（ロール選択オプション付き）
     if (commandName === 'verify-panel') {
+      const targetRole = interaction.options.getRole('role');
+
       const embed = new EmbedBuilder()
         .setTitle('✅ 認証パネル')
-        .setDescription('ボタンを押してサーバー認証を完了してください。')
+        .setDescription('下のボタンを押してサーバー認証を完了してください。')
         .setColor(0x5865F2);
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-          .setCustomId('btn_verify')
+          .setCustomId(`btn_verify_${targetRole.id}`) // ロールIDをボタンIDに埋め込み
           .setLabel('認証する')
           .setStyle(ButtonStyle.Success)
           .setEmoji('🔓')
@@ -65,7 +67,7 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // 各種コマンドごとの返答分岐
+    // その他のコマンド処理
     switch (commandName) {
       case 'shun':
         await interaction.reply('しゅん＆ぺんぎんさばへようこそ！🐧✨');
@@ -86,20 +88,33 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply(`コインの結果は... **${coin}** です！🪙`);
         break;
       default:
-        // 99個のコマンドのうち、個別設定していないその他のコマンドが実行されたときの共通応答
-        await interaction.reply({ content: `コマンド「/${commandName}」が実行されました！しゅん＆ぺんぎんさばBotは正常に稼働中です🐧`, ephemeral: true });
+        await interaction.reply({ content: `コマンド「/${commandName}」を実行しました。`, ephemeral: true });
         break;
     }
   }
 
-  // 2. ボタンが押されたときの処理 (認証・チケット作成)
+  // 2. ボタン処理 (認証 & ロール付与・チケット)
   if (interaction.isButton()) {
-    // 認証ボタン
-    if (interaction.customId === 'btn_verify') {
-      await interaction.reply({ content: '✅ 認証が完了しました！しゅん＆ぺんぎんさばをお楽しみください！', ephemeral: true });
+    // 認証ボタンが押されたとき (埋め込んだロールIDを取り出して付与)
+    if (interaction.customId.startsWith('btn_verify_')) {
+      const roleId = interaction.customId.replace('btn_verify_', '');
+      const role = interaction.guild.roles.cache.get(roleId);
+
+      if (!role) {
+        await interaction.reply({ content: '❌ 指定された認証ロールが見つかりませんでした。運営にお問い合わせください。', ephemeral: true });
+        return;
+      }
+
+      try {
+        await interaction.member.roles.add(role);
+        await interaction.reply({ content: `✅ 認証が完了しました！ **${role.name}** ロールを付与しました。しゅん＆ぺんぎんさばをお楽しみください！✨`, ephemeral: true });
+      } catch (error) {
+        console.error('ロール付与エラー:', error);
+        await interaction.reply({ content: '❌ ロールの付与に失敗しました。Botの権限（ロール順序）を確認してください。', ephemeral: true });
+      }
     }
 
-    // チケット発行ボタン
+    // チケット発行ボタンが押されたとき
     if (interaction.customId === 'create_ticket') {
       const channelName = `ticket-${interaction.user.username}`;
       const guild = interaction.guild;
