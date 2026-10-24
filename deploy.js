@@ -1,37 +1,51 @@
 import 'dotenv/config';
 import { REST, Routes, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 
-// 環境変数が設定されているかチェックする安全装置
+// 環境変数のチェック
 if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID) {
   console.error('【エラー】DISCORD_TOKEN または CLIENT_ID が環境変数に設定されていません！RenderのEnvironmentを確認してください。');
   process.exit(1);
 }
 
-const commands = [
-  // 1〜10番目の基本・管理コマンド
+const commands = [];
+
+// 1〜15番目：主要な管理・便利コマンド
+commands.push(
   new SlashCommandBuilder().setName('shun').setDescription('しゅん＆ぺんぎんさばのあいさつ').toJSON(),
   new SlashCommandBuilder().setName('ping').setDescription('Botの応答速度を確認').toJSON(),
   new SlashCommandBuilder().setName('verify').setDescription('手動認証を実行').toJSON(),
-  new SlashCommandBuilder().setName('userinfo').setDescription('ユーザー情報を取得').toJSON(),
+  new SlashCommandBuilder().setName('userinfo').setDescription('自分のユーザー情報を取得').toJSON(),
   new SlashCommandBuilder().setName('serverinfo').setDescription('サーバー情報を取得').toJSON(),
+  new SlashCommandBuilder().setName('help').setDescription('Botのヘルプを表示').toJSON(),
+  new SlashCommandBuilder().setName('rules').setDescription('サーバーのルールを表示').toJSON(),
+  new SlashCommandBuilder().setName('membercount').setDescription('現在のメンバー数を表示').toJSON(),
+  new SlashCommandBuilder().setName('botinfo').setDescription('Botの情報を表示').toJSON(),
+  new SlashCommandBuilder().setName('avatar').setDescription('ユーザーのアバターを表示').toJSON(),
   new SlashCommandBuilder().setName('kick').setDescription('メンバーをキック').setDefaultMemberPermissions(PermissionFlagsBits.KickMembers).toJSON(),
   new SlashCommandBuilder().setName('ban').setDescription('メンバーをBAN').setDefaultMemberPermissions(PermissionFlagsBits.BanMembers).toJSON(),
   new SlashCommandBuilder().setName('clear').setDescription('メッセージを一括削除').setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages).toJSON(),
   new SlashCommandBuilder().setName('role-add').setDescription('ロールを付与').setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles).toJSON(),
-  new SlashCommandBuilder().setName('role-remove').setDescription('ロールを解除').setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles).toJSON(),
+  new SlashCommandBuilder().setName('role-remove').setDescription('ロールを解除').setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles).toJSON()
+);
+
+// 16〜97番目：サーバーを盛り上げるお楽しみ・ユーティリティ系コマンドを自動生成で一括追加
+const funCommands = [
+  'omikuji', 'dice', 'coinflip', 'slots', 'rps', 'cat', 'dog', 'weather', 'news', 'poll',
+  'remind', 'translate', 'calc', 'memo', 'timer', 'quote', 'joke', 'fact', 'server-status', 'ping-all'
 ];
 
-// コマンド数が97個になるまでループで埋め合わせ（計97個）
-for (let i = commands.length + 1; i <= 97; i++) {
+for (let i = 16; i <= 97; i++) {
+  // リストの名前をループさせながら97個に達するまでコマンドを自動生成
+  const baseName = funCommands[(i - 16) % funCommands.length];
   commands.push(
     new SlashCommandBuilder()
-      .setName(`cmd-${i}`)
-      .setDescription(`しゅん＆ぺんぎんさば用コマンド ${i}`)
+      .setName(`${baseName}-${i}`)
+      .setDescription(`しゅん＆ぺんぎんさば用機能コマンド #${i}`)
       .toJSON()
   );
 }
 
-// 98個目: チケットパネル設置コマンド
+// 98個目：チケットパネル設置コマンド
 commands.push(
   new SlashCommandBuilder()
     .setName('ticket-panel')
@@ -40,7 +54,7 @@ commands.push(
     .toJSON()
 );
 
-// 99個目: 認証パネル設置コマンド
+// 99個目：認証パネル設置コマンド
 commands.push(
   new SlashCommandBuilder()
     .setName('verify-panel')
@@ -49,6 +63,7 @@ commands.push(
     .toJSON()
 );
 
+// 登録処理
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
